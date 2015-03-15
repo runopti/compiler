@@ -1,0 +1,155 @@
+%%
+%term
+    EOF 
+  | ID of string
+  | INT of int | STRING of string 
+  | COMMA | COLON | SEMICOLON | LPAREN | RPAREN | LBRACK | RBRACK 
+  | LBRACE | RBRACE | DOT 
+  | PLUS | MINUS | TIMES | DIVIDE | EQ | NEQ | LT | LE | GT | GE | UMINUS
+  | AND | OR | ASSIGN
+  | ARRAY | IF | THEN | ELSE | WHILE | FOR | TO | DO | LET | IN | END | OF 
+  | BREAK | NIL
+  | FUNCTION | VAR | TYPE 
+
+%nonterm  exp | expseq | explist | explistopt | expsemlist |  expop | program | stm | 
+		lvalue | assign | noval | paren |
+		letExp | sequencing | forExp | whileExp | ifThen | ifThenElse |
+		record | elementList | field | arrayCreate | functionCall |
+		decs | dec | tydec | vardec | fundec |
+		ty | tyfields | typeid | tyfield | tyfiels
+
+%pos int
+%verbose
+%start program
+%eop EOF
+%noshift EOF
+
+%name Tiger
+
+%keyword WHILE FOR TO BREAK LET IN END FUNCTION VAR TYPE ARRAY IF THEN ELSE 
+	DO OF NIL
+
+%prefer THEN ELSE LPAREN
+
+%value ID ("bogus")
+%value INT (1)
+%value STRING ("")
+
+%nonassoc ASSIGN
+%left THEN DO OF
+%left ELSE
+%left OR
+%left AND
+%nonassoc EQ NEQ GT LT GE LE
+%left PLUS MINUS
+%left TIMES DIVIDE
+%left UMINUS
+
+
+%%
+
+program: exp ()
+
+exp: INT ()
+  | ID ()
+  | NIL ()
+  | STRING ()
+  | noval ()
+  | letExp ()
+  | lvalue ()
+  | expop ()
+  | record ()
+  | sequencing ()
+  | forExp ()
+  | whileExp ()
+  | ifThen ()
+  | ifThenElse ()
+  | assign ()
+  | arrayCreate ()
+  | functionCall ()
+  | paren ()
+  | BREAK ()
+
+expop: exp EQ exp ()
+  | exp NEQ exp ()
+  | exp GT exp ()
+  | exp LT exp ()
+  | exp LE exp ()
+  | exp GE exp ()
+  | exp AND exp ()
+  | exp OR exp ()
+  | exp PLUS exp ()
+  | exp MINUS exp ()
+  | exp TIMES exp ()
+  | exp DIVIDE exp ()
+  | MINUS exp 	%prec UMINUS()
+
+lvalue: ID DOT ID ()
+  | ID LBRACK exp RBRACK ()
+  | lvalue DOT ID ()
+  | lvalue LBRACK exp RBRACK ()
+
+noval: LPAREN RPAREN ()
+
+sequencing: LPAREN expsemlist RPAREN ()
+
+expsemlist: exp SEMICOLON exp ()
+  | expsemlist SEMICOLON exp ()
+
+expseq: ()
+  | expsemlist ()
+  | exp ()
+
+explist: explist COMMA exp ()
+  | exp ()
+
+record: ID LBRACE elementList RBRACE ()
+  | ID LBRACE RBRACE ()
+typeid: ID ()
+elementList: field ()
+  | elementList COMMA field ()
+field: ID EQ exp ()
+
+arrayCreate: ID LBRACK exp RBRACK OF exp ()
+functionCall: ID LPAREN explistopt RPAREN ()
+explistopt: explist ()
+  | ()
+
+assign: lvalue ASSIGN exp ()
+  | ID ASSIGN exp ()
+
+paren: LPAREN exp RPAREN ()
+
+ifThen: IF exp THEN exp ()
+ifThenElse: IF exp THEN exp ELSE exp ()
+whileExp: WHILE exp DO exp ()
+forExp: FOR ID ASSIGN exp TO exp DO exp ()
+letExp: LET decs IN expseq END ()
+
+decs: ()
+  | decs dec ()
+
+dec: tydec ()
+  | vardec ()
+  | fundec ()
+
+tydec: TYPE typeid EQ ty ()
+ty : typeid ()
+  | LBRACE tyfields RBRACE ()
+  | ARRAY OF typeid ()
+tyfields: ()
+  | tyfiels ()
+tyfiels: tyfiels COMMA tyfield ()
+  | tyfield ()
+tyfield: ID COLON typeid ()
+
+vardec: VAR ID ASSIGN exp ()
+  | VAR ID COLON typeid ASSIGN exp ()
+
+fundec: FUNCTION ID LPAREN tyfields RPAREN EQ exp ()
+  | FUNCTION ID LPAREN tyfields RPAREN COLON typeid EQ exp ()
+
+
+
+
+
